@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pandava Quest: Find the Divine Weapon</title>
+    <style>
+        body {
+            font-family: 'Garamond', serif;
+            background: linear-gradient(to bottom, #3C2005, #6B3A0E);
+            text-align: center;
+            padding: 20px;
+            color: #E8D3A3;
+            margin: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-mosaic.png');
+            background-attachment: fixed;
+        }
+        #game-container {
+            max-width: 750px;
+            margin: 30px auto;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 35px;
+            border-radius: 20px;
+            border: 4px solid #A67C00;
+            box-shadow: 0 0 30px rgba(166, 124, 0, 0.7);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            font-size: 2.8em;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            margin-bottom: 15px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+            to { text-shadow: 0 0 20px rgba(255, 215, 0, 1); }
+        }
+        p, #scenario, #result, #score {
+            font-size: 1.3em;
+            margin: 20px 0;
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
+            color: #E8D3A3;
+        }
+        button {
+            background: linear-gradient(to bottom, #A67C00, #7A5A00);
+            color: #FFF;
+            padding: 15px 30px;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #FFD700, #A67C00);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+        .choice {
+            display: block;
+            margin: 15px auto;
+            width: 85%;
+            border: 2px solid #FFD700;
+            transition: background 0.3s ease;
+        }
+        .choice:disabled {
+            background: #4A4A4A;
+            border-color: #666;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        @media (max-width: 600px) {
+            #game-container {
+                padding: 20px;
+                margin: 15px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            button {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+            p, #scenario, #result, #score {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Garamond&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Pandava Quest: Find the Divine Weapon</h1>
+        <p>Guide Arjuna to find the Gandiva bow to aid the Pandavas in Kurukshetra!</p>
+        <div id="score">Strength: 0</div>
+        <div id="scenario"></div>
+        <div id="choices"></div>
+        <div id="result"></div>
+        <button id="next-btn" style="display:none;" onclick="nextScenario()">Continue</button>
+    </div>
+
+    <script>
+        const scenarios = [
+            {
+                scenario: "Arjuna seeks the Gandiva bow in a sacred mountain temple. A mystical gatekeeper demands proof of his lineage. What should Arjuna do?",
+                choices: [
+                    { text: "Recite his Pandava lineage with pride.", outcome: "The gatekeeper nods and opens the gate. +10 Strength.", points: 10, next: 1 },
+                    { text: "Offer a gem from his quiver.", outcome: "The gatekeeper accepts but delays Arjuna. No change.", points: 0, next: 1 },
+                    { text: "Threaten the gatekeeper with his bow.", outcome: "The gatekeeper curses Arjuna, sapping his energy. -10 Strength.", points: -10, next: 1 }
+                ]
+            },
+            {
+                scenario: "Arjuna encounters a Rakshasa blocking a narrow pass, demanding a duel to proceed. How does Arjuna respond?",
+                choices: [
+                    { text: "Seek Krishna’s advice through meditation.", outcome: "Krishna’s wisdom guides Arjuna to outsmart the Rakshasa. +15 Strength.", points: 15, next: 2 },
+                    { text: "Engage the Rakshasa in combat.", outcome: "Arjuna wins but is exhausted. -5 Strength.", points: -5, next: 2 },
+                    { text: "Try to bribe the Rakshasa.", outcome: "The Rakshasa takes the bribe and attacks anyway. -10 Strength.", points: -10, next: 2 }
+                ]
+            },
+            {
+                scenario: "A celestial storm blocks Arjuna’s path, sent by Indra to test his resolve. What should Arjuna do?",
+                choices: [
+                    { text: "Pray to Indra for mercy.", outcome: "Indra calms the storm, impressed by Arjuna’s devotion. +10 Strength.", points: 10, next: 3 },
+                    { text: "Push through the storm bravely.", outcome: "Arjuna endures but is weakened. -5 Strength.", points: -5, next: 3 },
+                    { text: "Turn back to find shelter.", outcome: "Arjuna loses his way in the storm. -10 Strength.", points: -10, next: 3 }
+                ]
+            },
+            {
+                scenario: "Arjuna reaches the Gandiva, guarded by a divine serpent. How does he claim the bow?",
+                choices: [
+                    { text: "Chant a mantra to calm the serpent.", outcome: "The serpent bows and yields the Gandiva. +20 Strength.", points: 20, next: 4 },
+                    { text: "Attempt to seize the bow quickly.", outcome: "The serpent bites Arjuna, but he takes the bow. +5 Strength.", points: 5, next: 4 },
+                    { text: "Flee from the serpent in fear.", outcome: "Arjuna escapes but fails to claim the Gandiva. -20 Strength.", points: -20, next: 4 }
+                ]
+            },
+            {
+                scenario: "Arjuna meets a disguised Yaksha at a lake who challenges him with a riddle. How does Arjuna proceed?",
+                choices: [
+                    { text: "Solve the Yaksha’s riddle.", outcome: "The Yaksha reveals a shortcut to the Gandiva’s location. +10 Strength.", points: 10, next: 5 },
+                    { text: "Drink from the lake without answering.", outcome: "The Yaksha curses Arjuna for disrespect. -10 Strength.", points: -10, next: 5 },
+                    { text: "Attack the Yaksha.", outcome: "The Yaksha vanishes, leaving Arjuna disoriented. -5 Strength.", points: -5, next: 5 }
+                ]
+            },
+            {
+                scenario: "A group of Gandharvas offer Arjuna celestial music to guide him, but demand loyalty. What should he do?",
+                choices: [
+                    { text: "Accept their music and pledge loyalty.", outcome: "The Gandharvas guide Arjuna forward. +15 Strength.", points: 15, next: 6 },
+                    { text: "Politely decline their offer.", outcome: "The Gandharvas leave, offering no help. No change.", points: 0, next: 6 },
+                    { text: "Demand their help without pledging.", outcome: "The Gandharvas curse Arjuna for arrogance. -10 Strength.", points: -10, next: 6 }
+                ]
+            },
+            {
+                scenario: "Arjuna faces a vision of Bhishma, who tests his respect for elders. How does Arjuna respond?",
+                choices: [
+                    { text: "Bow and seek Bhishma’s blessings.", outcome: "Bhishma blesses Arjuna, strengthening his resolve. +10 Strength.", points: 10, next: 7 },
+                    { text: "Ignore the vision as an illusion.", outcome: "The vision fades, leaving Arjuna uncertain. -5 Strength.", points: -5, next: 7 },
+                    { text: "Challenge Bhishma to prove his worth.", outcome: "Bhishma’s disapproval weakens Arjuna. -10 Strength.", points: -10, next: 7 }
+                ]
+            },
+            {
+                scenario: "A divine eagle blocks Arjuna’s path, demanding a token of courage. What should Arjuna offer?",
+                choices: [
+                    { text: "Offer a feather from his quiver.", outcome: "The eagle accepts and clears the path. +10 Strength.", points: 10, next: 8 },
+                    { text: "Try to sneak past the eagle.", outcome: "The eagle notices but lets Arjuna pass. No change.", points: 0, next: 8 },
+                    { text: "Fight the eagle.", outcome: "The eagle wounds Arjuna before flying away. -10 Strength.", points: -10, next: 8 }
+                ]
+            },
+            {
+                scenario: "Arjuna encounters a sage who offers a protective mantra but requires a vow of truth. What does he do?",
+                choices: [
+                    { text: "Take the vow and accept the mantra.", outcome: "The mantra shields Arjuna’s path. +15 Strength.", points: 15, next: 9 },
+                    { text: "Refuse the vow but ask for help.", outcome: "The sage leaves, unimpressed. -5 Strength.", points: -5, next: 9 },
+                    { text: "Ignore the sage entirely.", outcome: "Arjuna misses the mantra’s protection. -10 Strength.", points: -10, next: 9 }
+                ]
+            },
+            {
+                scenario: "A cursed forest maze traps Arjuna, and only wisdom can guide him out. How does he proceed?",
+                choices: [
+                    { text: "Recall Yudhishthira’s teachings.", outcome: "Arjuna navigates the maze with wisdom. +10 Strength.", points: 10, next: 10 },
+                    { text: "Cut through the maze with his sword.", outcome: "Arjuna escapes but is fatigued. -5 Strength.", points: -5, next: 10 },
+                    { text: "Wander aimlessly in the maze.", outcome: "Arjuna is trapped longer, losing hope. -10 Strength.", points: -10, next: 10 }
+                ]
+            },
+            {
+                scenario: "A celestial archer challenges Arjuna to a test of skill to prove his worth. What should he do?",
+                choices: [
+                    { text: "Accept and aim for the target.", outcome: "Arjuna’s skill impresses the archer. +15 Strength.", points: 15, next: 11 },
+                    { text: "Decline and seek another path.", outcome: "Arjuna avoids conflict but loses confidence. -5 Strength.", points: -5, next: 11 },
+                    { text: "Insult the archer’s challenge.", outcome: "The archer curses Arjuna’s pride. -10 Strength.", points: -10, next: 11 }
+                ]
+            },
+            {
+                scenario: "Arjuna finds a shrine to Lord Shiva, who demands an offering for guidance. What does Arjuna offer?",
+                choices: [
+                    { text: "Offer a prayer and a flower.", outcome: "Shiva grants guidance to the Gandiva. +10 Strength.", points: 10, next: 12 },
+                    { text: "Offer nothing and proceed.", outcome: "Arjuna continues without divine aid. No change.", points: 0, next: 12 },
+                    { text: "Demand Shiva’s help.", outcome: "Shiva’s wrath weakens Arjuna. -10 Strength.", points: -10, next: 12 }
+                ]
+            },
+            {
+                scenario: "A ghostly warrior, claiming to be Karna, blocks Arjuna’s path. How does Arjuna respond?",
+                choices: [
+                    { text: "Honor Karna’s spirit with respect.", outcome: "The spirit allows passage, moved by Arjuna’s honor. +10 Strength.", points: 10, next: 13 },
+                    { text: "Ignore the ghost as an illusion.", outcome: "The ghost fades, but Arjuna doubts himself. -5 Strength.", points: -5, next: 13 },
+                    { text: "Attack the ghostly warrior.", outcome: "The ghost curses Arjuna’s aggression. -10 Strength.", points: -10, next: 13 }
+                ]
+            },
+            {
+                scenario: "Arjuna reaches a divine vault where the Gandiva is locked. A celestial voice demands a final act of faith. What does he do?",
+                choices: [
+                    { text: "Kneel and pray to Lord Vishnu.", outcome: "Vishnu unlocks the vault, granting the Gandiva. +20 Strength.", points: 20, next: 14 },
+                    { text: "Force open the vault.", outcome: "Arjuna retrieves the bow but is injured. +5 Strength.", points: 5, next: 14 },
+                    { text: "Abandon the vault in doubt.", outcome: "Arjuna fails to claim the Gandiva. -20 Strength.", points: -20, next: 14 }
+                ]
+            }
+        ];
+
+        let currentScenario = 0;
+        let strength = 0;
+
+        function loadScenario() {
+            const s = scenarios[currentScenario];
+            document.getElementById('scenario').innerText = s.scenario;
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            s.choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = choice.text;
+                btn.className = 'choice';
+                btn.onclick = () => makeChoice(index);
+                choicesDiv.appendChild(btn);
+            });
+            document.getElementById('result').innerText = '';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function makeChoice(choiceIndex) {
+            const s = scenarios[currentScenario];
+            const choice = s.choices[choiceIndex];
+            strength += choice.points;
+            document.getElementById('result').innerText = choice.outcome;
+            document.getElementById('result').style.color = choice.points >= 0 ? 'green' : 'red';
+            document.getElementById('score').innerText = `Strength: ${strength}`;
+            document.getElementById('next-btn').style.display = 'block';
+            document.querySelectorAll('.choice').forEach(btn => btn.disabled = true);
+        }
+
+        function nextScenario() {
+            currentScenario++;
+            if (currentScenario < scenarios.length) {
+                loadScenario();
+            } else {
+                const gameContainer = document.getElementById('game-container');
+                gameContainer.innerHTML = `
+                    <h1>Quest Concluded!</h1>
+                    <p>Your final strength: ${strength}</p>
+                    <p>${strength >= 140 ? "Victory! Arjuna wields the Gandiva, ensuring the Pandavas' triumph!" : "Failure! The Gandiva remains lost, weakening the Pandavas."}</p>
+                    <button onclick="location.reload()">Play Again</button>
+                `;
+            }
+        }
+
+        // Start the game
+        loadScenario();
+    </script>
+</body>
+</html>

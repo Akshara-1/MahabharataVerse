@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhima's Mace Duel</title>
+    <style>
+        body {
+            font-family: 'Garamond', serif;
+            background: linear-gradient(to bottom, #3C2005, #6B3A0E);
+            text-align: center;
+            padding: 20px;
+            color: #E8D3A3;
+            margin: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-mosaic.png');
+            background-attachment: fixed;
+        }
+        #game-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 4px solid #A67C00;
+            box-shadow: 0 0 20px rgba(166, 124, 0, 0.7);
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            margin-bottom: 10px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+            to { text-shadow: 0 0 20px rgba(255, 215, 0, 1); }
+        }
+        p, #score, #game-over {
+            font-size: 1.2em;
+            color: #E8D3A3;
+            margin: 10px 0;
+        }
+        #health-bar {
+            width: 200px;
+            height: 20px;
+            background: #4A2F0D;
+            border: 2px solid #FFD700;
+            border-radius: 5px;
+            margin: 10px auto;
+            position: relative;
+        }
+        #health {
+            height: 100%;
+            background: linear-gradient(to right, #FFD700, #A67C00);
+            width: 100%;
+            border-radius: 3px;
+        }
+        canvas {
+            border: 2px solid #FFD700;
+            background: #4A2F0D url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        #game-over {
+            background: rgba(0, 0, 0, 0.95) url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 20px auto;
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        button {
+            background: linear-gradient(to bottom, #A67C00, #7A5A00);
+            color: #FFF;
+            padding: 10px 20px;
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #FFD700, #A67C00);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+        @media (max-width: 600px) {
+            #game-container {
+                padding: 15px;
+                margin: 10px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+            #health-bar {
+                width: 150px;
+            }
+            #game-over {
+                padding: 15px;
+                margin: 10px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Garamond&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Bhima's Mace Duel</h1>
+        <p>Control Bhima's mace with the mouse and click to defeat Kaurava enemies!</p>
+        <div id="score">Score: 0 | Wave: 1 | Health: 150</div>
+        <div id="health-bar"><div id="health"></div></div>
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <div id="game-over" style="display:none;">
+            <h2 id="game-result"></h2>
+            <p>Final Score: <span id="final-score"></span></p>
+            <p>Enemies Defeated: <span id="enemies-defeated"></span></p>
+            <p>Power-Ups Collected: <span id="power-ups-collected"></span></p>
+            <p id="narrative"></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        let wave = 1;
+        let health = 150;
+        let gameOver = false;
+        let enemies = [];
+        let powerUps = [];
+        let maceSwinging = false;
+        let enemiesDefeated = 0;
+        let powerUpsCollected = 0;
+        let animationFrame = 0;
+        let lastWaveTime = 0;
+        const WAVE_INTERVAL = 5000; // 5 seconds between waves
+
+        // Bhima (player) properties
+        const bhima = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            maceAngle: 0,
+            maceLength: 50,
+            swingCooldown: 300
+        };
+
+        // Enemy class
+        class Enemy {
+            constructor(isElite = false) {
+                const side = Math.random() < 0.5 ? 'left' : 'right';
+                this.x = side === 'left' ? 0 : canvas.width;
+                this.y = 50 + Math.random() * (canvas.height - 100);
+                this.radius = isElite ? 20 : 15;
+                this.speed = isElite ? 0.6 + wave * 0.2 : 1.2 + wave * 0.3;
+                this.direction = side === 'left' ? 1 : -1;
+                this.isElite = isElite;
+                this.damage = isElite ? 15 : 10;
+                this.hitFlash = 0;
+            }
+            update() {
+                this.x += this.direction * this.speed;
+                if (this.hitFlash > 0) this.hitFlash--;
+            }
+            draw() {
+                ctx.fillStyle = this.hitFlash > 0 ? '#FFD700' : (this.isElite ? '#A52A2A' : '#8B0000');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Power-up class
+        class PowerUp {
+            constructor() {
+                this.x = 50 + Math.random() * (canvas.width - 100);
+                this.y = 50 + Math.random() * (canvas.height - 100);
+                this.radius = 10;
+                this.type = Math.random() < 0.5 ? 'health' : 'speed';
+            }
+            draw() {
+                ctx.fillStyle = this.type === 'health' ? '#00FF00' : '#00B7EB';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Mouse controls
+        let mouseX = bhima.x;
+        let mouseY = bhima.y;
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            bhima.maceAngle = Math.atan2(mouseY - bhima.y, mouseX - bhima.x);
+        });
+
+        canvas.addEventListener('click', () => {
+            if (!maceSwinging && !gameOver) {
+                maceSwinging = true;
+                console.log('Mace swing!'); // Simulated sound effect
+                setTimeout(() => maceSwinging = false, bhima.swingCooldown);
+            }
+        });
+
+        // Spawn enemies
+        function spawnEnemies() {
+            if (!gameOver && wave <= 12) {
+                const numEnemies = wave; // 1 enemy per wave number
+                for (let i = 0; i < numEnemies; i++) {
+                    const isElite = Math.random() < 0.3 && wave > 3;
+                    enemies.push(new Enemy(isElite));
+                }
+                if (Math.random() < 0.4) powerUps.push(new PowerUp()); // 40% chance for power-up
+                console.log(`Wave ${wave} begins!`); // Simulated sound effect
+                wave++;
+            }
+        }
+
+        // Collision detection
+        function checkCollision(x1, y1, r1, x2, y2, r2) {
+            return Math.hypot(x1 - x2, y1 - y2) < r1 + r2;
+        }
+
+        // Main game loop
+        function gameLoop(timestamp) {
+            if (gameOver) {
+                // Victory animation: Bhima raises mace
+                if (wave > 12 && enemies.length === 0) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = 0.2 + Math.sin(timestamp / 1000) * 0.1;
+                    ctx.fillStyle = '#4A2F0D';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = 1;
+
+                    // Draw Bhima with raised mace
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(bhima.x, bhima.y, bhima.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#DAA520';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(bhima.x, bhima.y);
+                    const maceX = bhima.x;
+                    const maceY = bhima.y - bhima.maceLength * (1 + Math.sin(timestamp / 200) * 0.2);
+                    ctx.lineTo(maceX, maceY);
+                    ctx.stroke();
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(maceX, maceY, 10, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    animationFrame++;
+                    if (animationFrame < 60) requestAnimationFrame(gameLoop); // Animate for ~1s
+                }
+                // Defeat animation: Fade to dark
+                else if (health <= 0) {
+                    ctx.globalAlpha = 1 - animationFrame / 60;
+                    ctx.fillStyle = '#4A2F0D';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = 1;
+                    animationFrame++;
+                    if (animationFrame < 60) requestAnimationFrame(gameLoop); // Fade for ~1s
+                }
+                return;
+            }
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw animated background
+            ctx.globalAlpha = 0.2 + Math.sin(timestamp / 1000) * 0.1;
+            ctx.fillStyle = '#4A2F0D';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1;
+
+            // Spawn enemies every 5 seconds
+            if (timestamp - lastWaveTime > WAVE_INTERVAL && wave <= 12) {
+                spawnEnemies();
+                lastWaveTime = timestamp;
+            }
+
+            // Update and draw enemies
+            enemies.forEach(enemy => {
+                enemy.update();
+                enemy.draw();
+
+                // Check enemy collision with Bhima
+                if (checkCollision(bhima.x, bhima.y, bhima.radius, enemy.x, enemy.y, enemy.radius)) {
+                    health -= enemy.damage;
+                    enemies = enemies.filter(e => e !== enemy);
+                    console.log('Bhima hit!'); // Simulated sound effect
+                    if (health <= 0) {
+                        endGame(false);
+                        return;
+                    }
+                }
+
+                // Check mace hit
+                if (maceSwinging) {
+                    const maceX = bhima.x + Math.cos(bhima.maceAngle) * bhima.maceLength;
+                    const maceY = bhima.y + Math.sin(bhima.maceAngle) * bhima.maceLength;
+                    if (checkCollision(maceX, maceY, 10, enemy.x, enemy.y, enemy.radius)) {
+                        enemy.hitFlash = 10;
+                        enemies = enemies.filter(e => e !== enemy);
+                        score += enemy.isElite ? 20 : 10;
+                        enemiesDefeated++;
+                        console.log('Enemy defeated!'); // Simulated sound effect
+                    }
+                }
+            });
+
+            // Update and draw power-ups
+            powerUps.forEach(powerUp => {
+                powerUp.draw();
+                if (checkCollision(bhima.x, bhima.y, bhima.radius, powerUp.x, powerUp.y, powerUp.radius)) {
+                    if (powerUp.type === 'health') {
+                        health = Math.min(150, health + 20);
+                        console.log('Health restored!'); // Simulated sound effect
+                    } else {
+                        bhima.swingCooldown = Math.max(100, bhima.swingCooldown - 50);
+                        setTimeout(() => bhima.swingCooldown = 300, 5000);
+                        console.log('Speed boost gained!'); // Simulated sound effect
+                    }
+                    powerUps = powerUps.filter(p => p !== powerUp);
+                    powerUpsCollected++;
+                }
+            });
+
+            // Draw Bhima
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(bhima.x, bhima.y, bhima.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw mace
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(bhima.x, bhima.y);
+            const maceX = bhima.x + Math.cos(bhima.maceAngle) * bhima.maceLength;
+            const maceY = bhima.y + Math.sin(bhima.maceAngle) * bhima.maceLength;
+            ctx.lineTo(maceX, maceY);
+            ctx.stroke();
+            if (maceSwinging) {
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(maceX, maceY, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Update UI
+            document.getElementById('score').innerText = `Score: ${score} | Wave: ${wave} | Health: ${health}`;
+            document.getElementById('health').style.width = (health / 150) * 100 + '%';
+
+            // Check for victory (12 waves)
+            if (wave > 12 && enemies.length === 0) {
+                endGame(true);
+                return;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(success) {
+            gameOver = true;
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('enemies-defeated').innerText = enemiesDefeated;
+            document.getElementById('power-ups-collected').innerText = powerUpsCollected;
+            document.getElementById('game-result').innerText = success
+                ? "Victory! Bhima Crushes the Kauravas!"
+                : "Defeat! Bhima Falls in Battle.";
+            document.getElementById('narrative').innerText = success
+                ? "With unmatched strength, Bhima wields his mighty mace, shattering the Kaurava ranks on the Kurukshetra battlefield. His valor ensures the Pandavas' triumph, as the gods themselves applaud his prowess!"
+                : "Overwhelmed by the Kaurava onslaught, Bhima’s strength falters on the Kurukshetra battlefield. The Pandavas mourn, but his courage will inspire future battles.";
+            animationFrame = 0;
+            requestAnimationFrame(gameLoop); // Trigger final animation
+        }
+
+        function restartGame() {
+            score = 0;
+            wave = 1;
+            health = 150;
+            enemies = [];
+            powerUps = [];
+            enemiesDefeated = 0;
+            powerUpsCollected = 0;
+            gameOver = false;
+            bhima.swingCooldown = 300;
+            lastWaveTime = 0;
+            document.getElementById('score').innerText = "Score: 0 | Wave: 1 | Health: 150";
+            document.getElementById('health').style.width = '100%';
+            document.getElementById('game-over').style.display = 'none';
+            spawnEnemies();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        spawnEnemies();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MahabharataVerse - Cart</title>
+    <style>
+        :root {
+            --primary-color: #d4af37;
+            --secondary-color: #8b4513;
+            --accent-color: #ff5e62;
+            --bg-gradient: linear-gradient(135deg, #ff5e62, #d4af37, #8b4513);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Georgia', serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: #333;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1.5rem 2rem;
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header .logo {
+            font-size: 2rem;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        header nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+        }
+
+        header nav a:hover {
+            color: var(--primary-color);
+        }
+
+        .cart {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: var(--secondary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .cart-items {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item span {
+            font-size: 1.1rem;
+        }
+
+        .cart-item button {
+            padding: 0.5rem 1rem;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .cart-item button:hover {
+            background-color: #e04c50;
+        }
+
+        .cart-summary {
+            text-align: right;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        .shipping-payment {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+        }
+
+        .shipping-payment h2 {
+            font-size: 1.8rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .shipping-payment label {
+            display: block;
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .shipping-payment input,
+        .shipping-payment select {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #b8860b;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .cart-item { flex-direction: column; align-items: flex-start; }
+            .cart-summary { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">MahabharataVerse</div>
+        <nav>
+            <a href="index.html#home">Home</a>
+            <a href="products.html">Store</a>
+            <a href="games.html">Games</a>
+            <a href="cart.html">Cart</a>
+            <a href="login.html">Login</a>
+        </nav>
+    </header>
+
+    <section class="cart">
+        <h1>Your Cart</h1>
+        <div class="cart-items" id="cart-items"></div>
+        <div class="cart-summary" id="cart-summary">Total: $0.00</div>
+
+        <div class="shipping-payment">
+            <h2>Shipping & Payment</h2>
+            <div>
+                <label for="address">Shipping Address</label>
+                <input type="text" id="address" placeholder="Enter your address" required>
+                <label for="city">City</label>
+                <input type="text" id="city" placeholder="Enter your city" required>
+                <label for="zip">Zip Code</label>
+                <input type="text" id="zip" placeholder="Enter your zip code" required>
+                <label for="payment">Payment Method</label>
+                <select id="payment" required>
+                    <option value="">Select Payment Method</option>
+                    <option value="upi">UPI</option>
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="cod">Cash on Delivery</option>
+                </select>
+                <button class="btn" onclick="placeOrder()">Place Order</button>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p> 2025 MahabharataVerse. All rights reserved. </p>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                if (href !== '#' && href.startsWith('#')) {
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        function displayCart() {
+            const cartItems = document.getElementById('cart-items');
+            const cartSummary = document.getElementById('cart-summary');
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cartItems.innerHTML = '';
+            let total = 0;
+
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                const itemElement = document.createElement('div');
+                itemElement.className = 'cart-item';
+                itemElement.innerHTML = `
+                    <span>${item.name} - $${item.price} x ${item.quantity}</span>
+                    <button onclick="removeFromCart(${item.id})">Remove</button>
+                `;
+                cartItems.appendChild(itemElement);
+            });
+
+            cartSummary.textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        function removeFromCart(id) {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart = cart.filter(item => item.id !== id);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            displayCart();
+        }
+
+        function placeOrder() {
+            const address = document.getElementById('address').value;
+            const city = document.getElementById('city').value;
+            const zip = document.getElementById('zip').value;
+            const payment = document.getElementById('payment').value;
+
+            if (!address || !city || !zip || !payment) {
+                alert('Please fill in all shipping and payment details.');
+                return;
+            }
+
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+
+            alert(`Order placed successfully!\nShipping to: ${address}, ${city}, ${zip}\nPayment Method: ${payment}`);
+            localStorage.removeItem('cart');
+            document.getElementById('address').value = '';
+            document.getElementById('city').value = '';
+            document.getElementById('zip').value = '';
+            document.getElementById('payment').value = '';
+            displayCart();
+        }
+
+        window.onload = displayCart;
+    </script>
+</body>
+</html>

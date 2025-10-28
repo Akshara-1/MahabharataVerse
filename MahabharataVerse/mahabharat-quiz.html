@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurukshetra Battle Quiz</title>
+    <style>
+        body {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(to bottom, #8B0000, #FFD700);
+            text-align: center;
+            padding: 20px;
+            color: #2C1A0D;
+            margin: 0;
+        }
+        #game-container {
+            max-width: 700px;
+            margin: 20px auto;
+            background: #FFF8DC;
+            padding: 30px;
+            border-radius: 15px;
+            border: 3px solid #B8860B;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        #game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/arabesque.png');
+            opacity: 0.1;
+            z-index: 0;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #8B0000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        p, #question, #result, #score {
+            font-size: 1.2em;
+            position: relative;
+            z-index: 1;
+            margin: 15px 0;
+        }
+        button {
+            background: linear-gradient(to bottom, #DAA520, #B8860B);
+            color: #FFF;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 1em;
+            transition: transform 0.2s, background 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #B8860B, #8B0000);
+            transform: scale(1.05);
+        }
+        .option {
+            display: block;
+            margin: 12px auto;
+            width: 80%;
+            border: 2px solid #8B0000;
+        }
+        .option:disabled {
+            background: #A9A9A9;
+            cursor: not-allowed;
+        }
+        @media (max-width: 600px) {
+            #game-container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            button {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Kurukshetra Battle Quiz</h1>
+        <p>Answer questions about the Mahabharata to lead the Pandavas to victory!</p>
+        <div id="score">Score: 0</div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="result"></div>
+        <button id="next-btn" style="display:none;" onclick="nextQuestion()">Next Question</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Who was the commander of the Kaurava army on the first day of the Kurukshetra war?",
+                options: ["Duryodhana", "Bhishma", "Drona", "Karna"],
+                answer: "Bhishma"
+            },
+            {
+                question: "What was the name of Arjuna's divine bow?",
+                options: ["Pinaka", "Gandiva", "Sharanga", "Vijaya"],
+                answer: "Gandiva"
+            },
+            {
+                question: "Who was Krishna's sister, married to Arjuna?",
+                options: ["Draupadi", "Subhadra", "Uloopi", "Chitrangada"],
+                answer: "Subhadra"
+            },
+            {
+                question: "Which warrior was killed by Arjuna with Krishna's guidance on the 14th day?",
+                options: ["Bhishma", "Drona", "Jayadratha", "Karna"],
+                answer: "Jayadratha"
+            },
+            {
+                question: "What was the name of the battle formation used by the Kauravas that Abhimanyu entered?",
+                options: ["Chakravyuha", "Garudavyuha", "Makara Vyuha", "Krauncha Vyuha"],
+                answer: "Chakravyuha"
+            },
+            {
+                question: "Who was the mother of the Pandavas?",
+                options: ["Gandhari", "Kunti", "Madri", "Draupadi"],
+                answer: "Kunti"
+            },
+            {
+                question: "Which Pandava was known for his immense strength and wielded a mace?",
+                options: ["Arjuna", "Yudhishthira", "Bhima", "Nakula"],
+                answer: "Bhima"
+            },
+            {
+                question: "What was the name of the divine conch blown by Krishna in the war?",
+                options: ["Panchajanya", "Devadatta", "Sughosa", "Manipushpaka"],
+                answer: "Panchajanya"
+            },
+            {
+                question: "Who was the teacher of both Pandavas and Kauravas in archery and warfare?",
+                options: ["Kripa", "Drona", "Bhishma", "Parashurama"],
+                answer: "Drona"
+            },
+            {
+                question: "Which Kaurava leader survived the Kurukshetra war?",
+                options: ["Duryodhana", "Dushasana", "Kripa", "Shakuni"],
+                answer: "Kripa"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('question').innerText = q.question;
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            q.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = option;
+                btn.className = 'option';
+                btn.onclick = () => checkAnswer(option);
+                optionsDiv.appendChild(btn);
+            });
+            document.getElementById('result').innerText = '';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function checkAnswer(selected) {
+            const q = questions[currentQuestion];
+            const resultDiv = document.getElementById('result');
+            if (selected === q.answer) {
+                score += 10;
+                resultDiv.innerText = "Correct! The Pandavas gain strength!";
+                resultDiv.style.color = 'green';
+            } else {
+                resultDiv.innerText = `Wrong! The correct answer was ${q.answer}.`;
+                resultDiv.style.color = 'red';
+            }
+            document.getElementById('score').innerText = `Score: ${score}`;
+            document.getElementById('next-btn').style.display = 'block';
+            document.querySelectorAll('.option').forEach(btn => btn.disabled = true);
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                const gameContainer = document.getElementById('game-container');
+                gameContainer.innerHTML = `
+                    <h1>Battle Concluded!</h1>
+                    <p>Your final score: ${score}</p>
+                    <p>${score >= 80 ? "Victory! The Pandavas triumph under your wisdom!" : "The Kauravas prevail. Train harder, warrior!"}</p>
+                    <button onclick="location.reload()">Play Again</button>
+                `;
+            }
+        }
+
+        // Start the game
+        loadQuestion();
+    </script>
+</body>
+</html>

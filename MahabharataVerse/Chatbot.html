@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MahabharataVerse - Chatbot</title>
+    <style>
+        body {
+            font-family: 'Garamond', serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5e8c7; /* Parchment-like background */
+            color: #2c1a0e; /* Deep earthy brown */
+        }
+        header {
+            background-color: #1a3c6b; /* Deep indigo blue */
+            color: #ffd700; /* Gold accent */
+            padding: 15px 0;
+            text-align: center;
+            border-bottom: 3px solid #b8860b; /* Dark gold border */
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin: 0 20px;
+        }
+        nav ul li a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #ffebcd; /* Light parchment on hover */
+            text-decoration: underline;
+        }
+        .chat-container {
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 25px;
+            background-color: #fff8e1; /* Light saffron */
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 2px solid #b8860b; /* Gold border */
+        }
+        .chat-container h2 {
+            color: #8b0000; /* Deep crimson */
+            text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .chat-box {
+            height: 450px;
+            overflow-y: auto;
+            border: 1px solid #b8860b;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fefaf0; /* Subtle cream */
+            border-radius: 8px;
+        }
+        .chat-message {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            text-align: right;
+            background-color: #1a3c6b; /* Indigo blue */
+            color: #ffd700; /* Gold text */
+            margin-left: 20%;
+            padding: 12px;
+            border-radius: 10px 10px 0 10px;
+        }
+        .bot-message {
+            text-align: left;
+            background-color: #8b0000; /* Crimson */
+            color: #fff8e1; /* Light saffron text */
+            margin-right: 20%;
+            padding: 12px;
+            border-radius: 10px 10px 10px 0;
+        }
+        .chat-input {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        #userInput {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #b8860b;
+            border-radius: 5px;
+            font-size: 1em;
+            background-color: #fff8e1;
+            color: #2c1a0e;
+        }
+        #userInput:focus {
+            outline: none;
+            border-color: #1a3c6b;
+            box-shadow: 0 0 5px rgba(26, 60, 107, 0.5);
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #8b0000; /* Crimson button */
+            color: #ffd700; /* Gold text */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #a11212; /* Lighter crimson */
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #1a3c6b;
+            color: #ffd700;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-top: 2px solid #b8860b;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MahabharataVerse</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Store</a></li>
+                <li><a href="games.html">Games</a></li>
+                <li><a href="cart.html">Cart</a></li>
+                <li><a href="chatbot.html">Chatbot</a></li>
+                <li><a href="login.html">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="chat-container">
+        <h2>Talk with Vyasa</h2>
+        <div class="chat-box" id="chatBox">
+            <div class="chat-message bot-message">
+                Om Namah Shivaya! I am Vyasa, eternal narrator of the Mahabharata. Delve into the epic: inquire about characters like Arjuna, Draupadi, or Bhishma, events like Kurukshetra or Lakshagraha, themes of dharma or karma, or sacred quotes. Type your query below to begin!
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask about the Mahabharata..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </section>
+
+    <script>
+        // Simple stemming function for JavaScript
+        function simpleStem(word) {
+            word = word.toLowerCase();
+            // Remove common suffixes (simplified Porter Stemmer-like rules)
+            if (word.endsWith('s')) word = word.slice(0, -1);
+            if (word.endsWith('es')) word = word.slice(0, -2);
+            if (word.endsWith('ed')) word = word.slice(0, -2);
+            if (word.endsWith('ing')) word = word.slice(0, -3);
+            if (word.endsWith('ly')) word = word.slice(0, -2);
+            return word;
+        }
+
+        function preprocessText(text) {
+            // Tokenize, remove non-alphabetic, and stem
+            return text.toLowerCase()
+                .replace(/[^a-z\s]/g, '')
+                .split(/\s+/)
+                .map(word => simpleStem(word))
+                .filter(word => word.length > 2);
+        }
+
+        const knowledgeBase = {
+            "(mahabharata|epic|great epic)": {
+                response: "The Mahabharata, O seeker of wisdom, is the grand Sanskrit epic of ancient Bharat, woven by my hand, Vyasa. It chronicles the dynastic struggle between the virtuous Pandavas and the ambitious Kauravas, culminating in the devastating Kurukshetra War. Spanning over 100,000 shlokas, it delves into profound themes of dharma, karma, and human destiny, embedding the sacred Bhagavad Gita. What aspect of this vast saga beckons you—heroes, battles, or eternal lessons?"
+            },
+            "(arjuna|archer|third pandava)": {
+                response: "Arjuna, the third Pandava and son of Indra, is the unparalleled archer wielding the Gandiva bow. Krishna's devotee, he receives the Bhagavad Gita's wisdom and sires Abhimanyu. His exile quests yield divine weapons. Shall I narrate his swayamvara victory or his pivotal role in Kurukshetra?"
+            },
+            "(draupadi|panchali|krishnaa)": {
+                response: "Draupadi, Drupada's fire-born daughter, wife of the Pandavas, symbolizes feminine strength. Won by Arjuna in swayamvara, her disrobing in the dice game ignites the war. Krishna saves her miraculously. Would you know her vengeance or queenship?"
+            },
+            "(krishna|vasudeva|madhava)": {
+                response: "Lord Krishna, incarnation of Vishnu, is the divine strategist, Arjuna's charioteer, and philosopher of the Bhagavad Gita. He upholds dharma, orchestrates the Pandavas' victory, and embodies cosmic balance. Shall I reveal his leelas, counsel, or post-war curse?"
+            },
+            "(bhishma|devavrata|grandsire)": {
+                response: "Bhishma, son of Shantanu and Ganga, vows celibacy for his father's marriage, becoming the Kuru patriarch. An invincible warrior, he leads the Kauravas but falls to Arjuna via Shikhandi. From his arrow bed, he imparts rajadharma. Shall I narrate his vow or teachings?"
+            },
+            "(karna|surya.?s son|angaraja)": {
+                response: "Karna, Kunti's secret son by Surya, raised as a suta's child, is a tragic hero of unmatched generosity and archery. Loyal to Duryodhana, cursed repeatedly, he dies to Arjuna. His kavacha-kundala make him invincible until removed. Shall I tell of his birth secret or final duel?"
+            },
+            "(kunti|pandu.?s wife)": {
+                response: "Kunti, adopted daughter of Kuntibhoja, receives a mantra from Durvasa to invoke gods, birthing Pandavas and Karna. Wise mother, she reveals Karna's heritage too late. Her resilience shines in exile. Would you hear of her early life or farewell to Karna?"
+            },
+            "(yudhishthira|eldest pandava)": {
+                response: "Yudhishthira, the eldest Pandava, son of Dharma (Yama), is the epitome of righteousness and truth. Known as Dharmaraja, he is a skilled charioteer whose fatal flaw leads to the dice game loss. Shall I recount his ascension to heaven or his adherence to dharma?"
+            },
+            "(bhima|strongest pandava)": {
+                response: "Bhima, second Pandava, son of Vayu, possesses unparalleled strength and loyalty. A mighty warrior, he slays demons like Bakasura and fulfills vows by crushing Duryodhana's thighs. Would you hear of his feats in the war or his rakshasa son Ghatotkacha?"
+            },
+            "(duryodhana|eldest kaurava)": {
+                response: "Duryodhana, the eldest Kaurava, son of Dhritarashtra, is driven by envy and ambition. His refusal to share the kingdom sparks the war; he dies honorably in a mace duel with Bhima. Would you know his birth or final battle?"
+            },
+            "(kurukshetra|great war|battle of kurukshetra)": {
+                response: "The 18-day Kurukshetra War, dynastic clash between Pandavas and Kauravas, sees divine interventions and massive casualties. Key phases: Bhishma's command, Drona's strategies, Karna's valor, and Ashwatthama's night raid. Pandavas win, but at great cost. Shall I describe a specific day or hero's fall?"
+            },
+            "(lakshagraha|house of lac|burning palace)": {
+                response: "Lakshagraha, the wax palace built by Purochana on Duryodhana's orders to burn the Pandavas. Vidura warns; they escape via a tunnel, faking their deaths. Bhima carries Kunti and brothers. Marks early antagonism. What of the plot or escape?"
+            },
+            "(draupadi marriage|swayamvara|fish eye challenge)": {
+                response: "Draupadi's swayamvara challenges suitors to string a bow and hit a fish's eye via reflection. Arjuna, disguised as a Brahmin, succeeds; Kunti decrees shared wife. Karna is barred by caste taunt. Shall I narrate the contest or aftermath?"
+            },
+            "(dice game|game of dice|chaupar)": {
+                response: "The infamous dice game, rigged by Shakuni, sees Yudhishthira lose kingdom, brothers, and Draupadi to Duryodhana. Draupadi's disrobing ignites the war. Would you hear the debate or humiliation?"
+            },
+            "(bhagavad gita|gita)": {
+                response: "The Bhagavad Gita, Krishna's sermon to despondent Arjuna on Kurukshetra's field, comprises 18 chapters on yoga paths: karma, bhakti, jnana. Key: Detached action, eternal soul, devotion to Ishvara. Timeless guide to life. Shall I quote verses or explain concepts?"
+            },
+            "(dharma|duty|righteousness)": {
+                response: "Dharma, the cosmic order and moral duty, permeates the Mahabharata. Yudhishthira upholds truth, yet war demands compromises; Krishna advises selfless action. Shall I explore its facets or Gita's teachings?"
+            },
+            "(karma|action|fruit of action)": {
+                response: "Karma, the law of cause and effect, drives destinies—good deeds yield merit, sins retribution. Karna suffers past curses; Gita urges detached karma yoga. Would you know examples or philosophical depth?"
+            },
+            "(sacrifice|renunciation|tyaga)": {
+                response: "Sacrifice abounds: Bhishma's celibacy, Draupadi's trials, Ghatotkacha's death. Renunciation post-war leads to moksha quest. Gita extols selfless sacrifice. Would you know instances or spiritual significance?"
+            },
+            "(quote|gita quote|bhagavad gita quote|sloka)": {
+                response: "random_gita_quote"
+            },
+            "(mahabharata quote|non gita quote)": {
+                response: "random_mahabharata_quote"
+            },
+            "(hello|hi|namaste|greetings)": {
+                response: "Namaste, noble seeker! Vyasa welcomes you to the Mahabharata's eternal weave. Inquire of myriad characters, epic events, profound themes, sacred quotes, or whimsical what-ifs. Let the discourse begin!"
+            },
+            "(thank you|thanks)": {
+                response: "Your appreciation echoes through the ages, O inquirer. The wisdom of the Mahabharata flows freely. Pray, what more shall we explore?"
+            },
+            "(goodbye|bye|farewell)": {
+                response: "Farewell, traveler of tales. May dharma light your path as the stars guide the night. Return when the epic calls."
+            },
+            "(exit)": {
+                response: "exit"
+            }
+        };
+
+        const gitaQuotes = [
+            "You have the right to work, but never to the fruit of work. You should never engage in action for the sake of reward, nor should you long for inaction.",
+            "The soul can never be cut to pieces by any weapon, nor burned by fire, nor moistened by water, nor withered by the wind.",
+            "Whenever there is a decline in righteousness and rise of unrighteousness, O Arjuna, at that time I manifest myself on earth.",
+            "As the heat of a fire reduces wood to ashes, the fire of knowledge burns to ashes all karma.",
+            "Perform your prescribed duty, for action is better than inaction. A man cannot even maintain his physical body without work."
+        ];
+
+        const mahabharataQuotes = [
+            "What is the greatest wonder in the world? That, every single day, people die, Yet the living think they are immortal.",
+            "Anger is the enemy of wisdom; it clouds judgment and leads to regret.",
+            "True knowledge is that which leads to humility and service, not arrogance.",
+            "The root of all suffering is attachment; let go, and find peace.",
+            "The bond of brothers is unbreakable, forged in blood and tempered by trials."
+        ];
+
+        function getResponses(userInput) {
+            const lowerInput = userInput.toLowerCase();
+            const matches = [];
+            const userStemmed = new Set(preprocessText(userInput));
+
+            // First, check for exact regex matches
+            for (const pattern in knowledgeBase) {
+                const regex = new RegExp(pattern, 'i');
+                if (regex.test(lowerInput)) {
+                    const response = knowledgeBase[pattern].response;
+                    if (response === "random_gita_quote") {
+                        matches.push(gitaQuotes[Math.floor(Math.random() * gitaQuotes.length)]);
+                    } else if (response === "random_mahabharata_quote") {
+                        matches.push(mahabharataQuotes[Math.floor(Math.random() * mahabharataQuotes.length)]);
+                    } else {
+                        matches.push(response);
+                    }
+                }
+            }
+
+            // Then, check for stemmed matches
+            for (const pattern in knowledgeBase) {
+                const keyText = pattern.replace(/\(.*?\)/g, '').replace(/\|/g, ' ').trim();
+                const keyStemmed = new Set(preprocessText(keyText));
+                if ([...userStemmed].some(word => keyStemmed.has(word))) {
+                    const response = knowledgeBase[pattern].response;
+                    if (response === "random_gita_quote") {
+                        matches.push(gitaQuotes[Math.floor(Math.random() * gitaQuotes.length)]);
+                    } else if (response === "random_mahabharata_quote") {
+                        matches.push(mahabharataQuotes[Math.floor(Math.random() * mahabharataQuotes.length)]);
+                    } else if (!matches.includes(response)) {
+                        matches.push(response);
+                    }
+                }
+            }
+
+            if (!matches.length) {
+                return ["Alas, that query eludes my vast scrolls, O seeker. Try names like Bhishma or Karna, events like Lakshagraha, or themes like karma!"];
+            }
+
+            return [...new Set(matches)].slice(0, 1); // Return one unique response
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('userInput').value.trim();
+            if (!userInput) return;
+
+            const chatBox = document.getElementById('chatBox');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'chat-message user-message';
+            userMessage.textContent = userInput;
+            chatBox.appendChild(userMessage);
+
+            if (userInput.toLowerCase() === 'exit') {
+                const botMessage = document.createElement('div');
+                botMessage.className = 'chat-message bot-message';
+                botMessage.textContent = "May the grace of Krishna and dharma accompany you henceforth. Farewell, until the next chapter unfolds.";
+                chatBox.appendChild(botMessage);
+                document.getElementById('userInput').disabled = true;
+                document.querySelector('button').disabled = true;
+                chatBox.scrollTop = chatBox.scrollHeight;
+                return;
+            }
+
+            const responses = getResponses(userInput);
+            responses.forEach(response => {
+                const botMessage = document.createElement('div');
+                botMessage.className = 'chat-message bot-message';
+                botMessage.textContent = response;
+                chatBox.appendChild(botMessage);
+            });
+
+            document.getElementById('userInput').value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
